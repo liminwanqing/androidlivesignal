@@ -7,7 +7,7 @@ android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
     defaultConfig {
-        applicationId "com.zenmen.demo"
+        applicationId "com.signal.example"
         minSdkVersion 23
         targetSdkVersion 29
         versionCode 1
@@ -15,7 +15,8 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++11"
+                cppFlags "-std=c++11 -fexceptions -Wno-error=format-security"
+                arguments "-DANDROID_STL=c++_static"
             }
         }
     }
@@ -44,10 +45,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "androidx.lifecycle:lifecycle-extensions:2.1.0"
 
-    def work_version = "2.3.1"
-    implementation "androidx.work:work-runtime:$work_version"
-    // Kotlin + coroutines
-    implementation "androidx.work:work-runtime-ktx:$work_version"
 }
 repositories {
     mavenCentral()

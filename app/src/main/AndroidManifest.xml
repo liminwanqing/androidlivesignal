@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.zenmen.demo">
+    package="com.signal.example">
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
@@ -11,44 +11,44 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:name="com.zenmen.demo.MyApplication">
-        <activity android:name="com.zenmen.demo.MainActivity">
+        android:name="com.signal.example.MyApplication">
+        <activity android:name="com.signal.example.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="com.zenmen.demo.keep.GuardService1"
+        <service android:name="com.signal.example.keep.GuardService1"
             android:exported="true"
             android:enabled="true"
             android:process=":service1">
         </service>
-        <service android:name="com.zenmen.demo.keep.GuardService2"
+        <service android:name="com.signal.example.keep.GuardService2"
             android:exported="true"
             android:enabled="true"
             android:process=":service2">
         </service>
-        <service android:name="com.zenmen.demo.keep.JobWakeUpService1"
+        <service android:name="com.signal.example.keep.JobWakeUpService1"
             android:exported="true"
             android:enabled="true"
             android:process=":service1"
             android:permission="android.permission.BIND_JOB_SERVICE">
         </service>
-        <service android:name="com.zenmen.demo.keep.JobWakeUpService2"
+        <service android:name="com.signal.example.keep.JobWakeUpService2"
             android:exported="true"
             android:enabled="true"
             android:process=":service2"
             android:permission="android.permission.BIND_JOB_SERVICE">
         </service>
-        <receiver android:name="com.zenmen.demo.keep.BootBroadcast" >
+        <receiver android:name="com.signal.example.keep.BootBroadcast" >
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="oppo.intent.action.BOOT_COM"/>
             </intent-filter>
         </receiver>
 
-        <receiver android:name="com.zenmen.demo.keep.SystemBroadcast" >
+        <receiver android:name="com.signal.example.keep.SystemBroadcast" >
             <intent-filter>
                 <action android:name="android.intent.action.USER_PRESENT" />
                 <action android:name="android.intent.action.PACKAGE_RESTARTED" />
@@ -61,7 +61,7 @@
             </intent-filter>
         </receiver>
         <!--1像素Activity-->
-        <activity android:name="com.zenmen.demo.keep.DemoActivity"
+        <activity android:name="com.signal.example.keep.DemoActivity"
             android:configChanges="keyboardHidden|orientation|screenSize|navigation|keyboard"
             android:excludeFromRecents="true"
             android:exported="false"
@@ -70,12 +70,6 @@
             android:theme="@style/TranslucentTheme"
             android:taskAffinity=":keep.DemoActivity"
             android:windowIsTranslucent="true" />
-        <activity android:name=".component.DataActivity">
-        </activity>
-        <provider
-            android:authorities="com.leo.peopleprovider"
-            android:name=".component.PeopleProvider"
-            android:exported="true"/>
     </application>
 
 </manifest>
