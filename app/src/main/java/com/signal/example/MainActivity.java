@@ -3,6 +3,7 @@ package com.signal.example;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
+import athena.backtrace.backtrace;
 
 import android.animation.Animator;
 
@@ -32,9 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private final String TAG = "master";
 
     // Used to load the 'native-lib' library on application startup.
-    static {
-        System.loadLibrary("native-lib");
-    }
+//    static {
+//        System.loadLibrary("native-lib");
+//    }
 
     private HomeViewModel homeViewModel;
     TextView text;
@@ -49,7 +50,10 @@ public class MainActivity extends AppCompatActivity {
 
         // Example of a call to a native method
         final TextView tv = findViewById(R.id.sample_text);
-        tv.setText(stringFromJNI());
+//        tv.setText(stringFromJNI());
+        //limin
+        backtrace.init(getApplicationContext(), getPackageName());
+        System.loadLibrary("native-lib");
 
         text = findViewById(R.id.test);
 
@@ -80,12 +84,16 @@ public class MainActivity extends AppCompatActivity {
         tv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String tmp = stringFromJNI();
+//                String tmp = stringFromJNI();
+                String tmp = "hello";
                 homeViewModel.getHome().setValue(tmp);
                 Animator animator = ObjectAnimator.ofFloat(text, "translationX", 0f, 300f, 0f);
                 animator.setDuration(1000);
                 animator.setInterpolator(new DecelerateAccelerateInterpolator());
                 animator.start();
+
+                Log.e (TAG, backtrace.getStackTrace());
+                Log.e (TAG, backtrace.getNativeStack(4));
 
                 testRemove7();
 

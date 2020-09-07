@@ -8,50 +8,22 @@
 #include <stdatomic.h>
 #include "backtrace.h"
 #include "debug_log.h"
-#include "../../../../backtrace/src/main/cpp/yyStack.h"
+#include "jnihelper.h"
 
 #define TAG    "myhello-jni-test" // 这个是自定义的LOG的标识
 #define LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, TAG,__VA_ARGS__) // 定义LOGD类型
+#define JNI_CLASS_NAME "athena/backtrace/backtrace"
 
 std::string hello = "hello";
 std::string java_stack;
-
-struct pthread_rwlock_internal_t {
-    atomic_int state;
-    atomic_int writer_tid;
-
-    bool pshared;
-    bool writer_nonrecursive_preferred;
-    uint16_t __pad;
-
-// When a reader thread plans to suspend on the rwlock, it will add STATE_HAVE_PENDING_READERS_FLAG
-// in state, increase pending_reader_count, and wait on pending_reader_wakeup_serial. After woken
-// up, the reader thread decreases pending_reader_count, and the last pending reader thread should
-// remove STATE_HAVE_PENDING_READERS_FLAG in state. A pending writer thread works in a similar way,
-// except that it uses flag and members for writer threads.
-
-    int pending_lock;  // All pending members below are protected by pending_lock.
-    uint32_t pending_reader_count;  // Count of pending reader threads.
-    uint32_t pending_writer_count;  // Count of pending writer threads.
-    uint32_t pending_reader_wakeup_serial;  // Pending reader threads wait on this address by futex_wait.
-    uint32_t pending_writer_wakeup_serial;  // Pending writer threads wait on this address by futex_wait.
-
-#if defined(__LP64__)
-    char __reserved[20];
-#else
-    char __reserved[4];
-#endif
-};
 
 void JNU_ThrowByName(JNIEnv *env, const char *name, const char *msg);
 void trace(int);
 void java_trace(JNIEnv* env);
 void get_java_trace(JNIEnv* env);
+std::string getJavaStack(JNIEnv* env);
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_signal_example_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
+jstring test(JNIEnv *env) {
     LOGD("limin setting native staring");
 //    int res, ii;
 //    pthread_t rthread[2], wthread;
@@ -70,6 +42,20 @@ Java_com_signal_example_MainActivity_stringFromJNI(
     LOGD("%s", java_stack.c_str());
 
     return env->NewStringUTF(hello.c_str());
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_athena_backtrace_backtrace_getNativeFromJNI(JNIEnv *env, jobject /* this */, int num) {
+    if(num > 128) {
+        num = 128;
+    }
+    std::vector<uintptr_t> frames(num);
+
+    size_t num_frames = backtrace_get(frames.data(), frames.size());
+    if (num_frames != 0) {
+        return env->NewStringUTF(backtrace_string(frames.data(), num).c_str());
+    }
+    return env->NewStringUTF("");
 }
 
 void JNU_ThrowByName(JNIEnv *env, const char *name, const char *msg)
@@ -166,7 +152,7 @@ char* jstringToChar(JNIEnv* env, jstring jstr) {
 }
 
 void get_java_trace(JNIEnv* env) {
-    jclass  throwable_class = env->FindClass("com/signal/example/MainActivity");
+    jclass  throwable_class = env->FindClass(JNI_CLASS_NAME);
     if (nullptr == throwable_class) {
         return;
     }
@@ -198,109 +184,37 @@ void get_java_trace(JNIEnv* env) {
     }
 }
 
-void signalHandle(int sig) {
-    LOGD("limin setting signal number is %d", sig);
-    switch (sig) {
-        case SIGSTOP:
-            hello = "signal stop";
-            break;
-        case SIGQUIT:
-            hello = "signal quit";
-            break;
-        case SIGCONT:
-            hello = "signal cont";
-            break;
-        case SIGKILL:
-            hello = "signal kill";
-            break;
-        default:
-            break;
+std::string getJavaStack(JNIEnv* env){
+    std::string stack = "";
+    jclass  throwable_class = env->FindClass(JNI_CLASS_NAME);
+    if (nullptr == throwable_class) {
+        return stack;
     }
-}
 
-
-static void my_handler(int sig, siginfo_t *si, void *sc) {
-    LOGD("limin signal: %d\n", sig);
-    switch (sig) {
-        case SIGSTOP:
-            hello = "signal stop";
-            break;
-        case SIGQUIT:
-            hello = "signal quit";
-            break;
-        case SIGCONT:
-            hello = "signal cont";
-            break;
-        case SIGKILL:
-            hello = "signal kill";
-            break;
-        default:
-            break;
-    }
-}
-
-static void* sig_handle(void *arg) {
-    sigset_t* tmp = (sigset_t*) arg;
-    pthread_sigmask(SIG_BLOCK, tmp, NULL);
-    while (true) {
-        int signal_number;
-        auto rc = sigwait(tmp, &signal_number);
-        if (rc == 0) {
-            switch (signal_number) {
-                case SIGQUIT:
-                    LOGD("limin get signal SIGQUIT!!");
-                    hello = "signal quit";
-                    break;
-                case SIGCONT:
-                    LOGD("limin get signal SIGCONT!!");
-                    hello = "signal SIGCONT";
-                case SIGABRT:
-                    LOGD("limin get signal SIGABRT!!");
-                    hello = "signal SIGABRT";
-                default:
-                    break;
-            }
+    jclass global_class = static_cast<jclass>(env->NewGlobalRef(throwable_class));
+    if (nullptr == global_class) {
+        if (nullptr != throwable_class) {
+            env->DeleteLocalRef(throwable_class);
         }
+        return stack;
     }
-    pthread_detach(pthread_self());
-}
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_signal_example_MainActivity_signalFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    LOGD("limin setting signal");
-    LOGD("native stack for ......... \n %s", yyStack::getNativeTarce(2).c_str());
-//    signal(SIGSTOP, signalHandle);
-//    signal(SIGQUIT, signalHandle);
-//    signal(SIGCONT, signalHandle);
-    struct sigaction act;
-    memset(&act, 0, sizeof(act));
-    sigemptyset(&act.sa_mask);
+    static jmethodID   trace_cb_method = env->GetStaticMethodID(global_class, "getStackTrace",
+                                                                "()Ljava/lang/String;");
 
-    sigaction(SIGQUIT, &act, nullptr);
-    sigaction(SIGCONT, &act, nullptr);
-    sigaction(SIGABRT, &act, nullptr);
-//    sigaddset(&act.sa_mask, SIGQUIT);
-//    sigaddset(&act.sa_mask, SIGCONT);
-//    sigaddset(&act.sa_mask, SIGKILL);
-//    act.sa_sigaction = my_handler;
-//    act.sa_flags = 0;
+    jobject job = env->CallStaticObjectMethod(global_class, trace_cb_method);
+    stack = jstringToChar(env, (jstring)job);
 
-    sigset_t set_;
-    sigemptyset(&set_);
-    sigaddset(&set_, SIGQUIT);
-    sigaddset(&set_, SIGCONT);
-    sigaddset(&set_, SIGABRT);
-    sigaddset(&set_, SIGSEGV);
+    if (nullptr != throwable_class) {
+        env->DeleteLocalRef(throwable_class);
+    }
+    if (nullptr != global_class) {
+        env->DeleteGlobalRef(global_class);
+    }
 
-    pthread_t thread;
-    pthread_create(&thread, NULL, &sig_handle, (void*)&set_);
+    if (nullptr != job) {
+        env->DeleteLocalRef(job);
+    }
 
-//    sigaction(SIGQUIT, &act, nullptr);
-//    sigaction(SIGCONT, &act, nullptr);
-//    sigaction(SIGABRT, &act, nullptr);
-//    sigprocmask(SIG_BLOCK, &act.sa_mask, NULL);
-    pause();
-    LOGD("limin setting signal end!!");
+    return stack;
 }

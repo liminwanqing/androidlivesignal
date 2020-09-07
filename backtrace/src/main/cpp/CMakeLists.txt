@@ -11,22 +11,27 @@ cmake_minimum_required(VERSION 3.4.1)
 # Gradle automatically packages shared libraries with your APK.
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconversion" )
 
-add_library(trace-lib
-        SHARED
-        IMPORTED)
-set_property(TARGET trace-lib
-        PROPERTY
-        IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../backtrace/build/intermediates/cmake/debug/obj/${ANDROID_ABI}/libathenaStack.so)
-
+set (CMAKE_CXX_VISIBILITY_PREset hidden)
+set (CMAKE_C_VISIBILITY_PREset hidden)
+set (CMAKE_VISIBILITY_INLINES_hidden 1)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections")
 
 add_library( # Sets the name of the library.
-             native-lib
+             athenaStack
 
              # Sets the library as a shared library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             native-lib.cpp backtrace.cpp MapData.cpp async_safe_log.cpp)
+             athenaTrace.cpp
+             MapData.cpp
+             async_safe_log.cpp
+             backtrace.cpp
+             yyStack.cpp
+             main.cpp
+             jnihelper.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -39,16 +44,14 @@ find_library( # Sets the name of the path variable.
 
               # Specifies the name of the NDK library that
               # you want CMake to locate.
-              log)
+              log )
 
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-                       native-lib
-
-        trace-lib
+                      athenaStack
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib} )
